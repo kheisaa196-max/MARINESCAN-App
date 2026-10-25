@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MARINESCAN App - Bright Ocean Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- TensorFlow.js Core & MobileNet Model for Browser AI -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+  <style>
+    body {
+      background-color: #B3E5FC;
+      color: #0D47A1;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .phone-container {
+      width: 100%;
+      max-width: 375px;
+      height: 812px;
+      background-color: #E3F2FD;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(13, 71, 161, 0.2), 0 0 0 10px #0D47A1;
+      display: flex;
+      flex-direction: column;
+    }
+    .screen {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      height: calc(100% - 65px);
+      overflow-y: auto;
+      padding-bottom: 20px;
+    }
+    .screen.active {
+      display: flex;
+    }
+    .card-light {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid #90CAF9;
+      box-shadow: 0 4px 15px rgba(33, 150, 243, 0.08);
+    }
+    .bg-welcome-bright {
+      background: linear-gradient(to bottom, rgba(227, 242, 253, 0.75), rgba(13, 71, 161, 0.85)),
+                  url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80') center/cover no-repeat;
+    }
+    .scan-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: #2196F3;
+      box-shadow: 0 0 15px #2196F3;
+      top: 0;
+      animation: scan 2s ease-in-out infinite alternate;
+    }
+    @keyframes scan {
+      0% { top: 0%; }
+      100% { top: 100%; }
+    }
+    .ocean-map-light {
+      background: linear-gradient(135deg, #BBDEFB 0%, #90CAF9 100%);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="phone-container">
+    <!-- Top Status Bar Simulation -->
+    <div class="flex justify-between items-center px-6 pt-3 pb-2 text-xs text-slate-800 select-none z-50 bg-white/40 backdrop-blur-md">
+      <span class="font-bold">09:41</span>
+      <div class="flex items-center space-x-2">
+        <i class="fas fa-signal"></i>
+        <i class="fas fa-wifi"></i>
+        <i class="fas fa-battery-full text-[#0D47A1]"></i>
+      </div>
+    </div>
+
+    <!-- 1. HALAMAN WELCOME SCREEN -->
+    <div id="screen-welcome" class="screen active justify-between p-6 text-center bg-welcome-bright">
+      <div class="mt-12">
+        <div class="w-20 h-20 mx-auto rounded-2xl bg-white/30 border border-white/60 flex items-center justify-center mb-6 shadow-lg backdrop-blur-md">
+          <i class="fas fa-fish text-4xl text-white"></i>
+        </div>
+        <h1 class="text-2xl font-medium tracking-wider text-white">Welcome to</h1>
+        <h2 class="text-4xl font-black text-white tracking-widest mt-1 shadow-sm">MARINESCAN</h2>
+        <p class="text-blue-100 text-xs mt-3 px-4 font-medium">AI-Powered Maritime & Fishing Radar</p>
+      </div>
+      
+      <div class="mb-10 space-y-4">
+        <button onclick="switchScreen('screen-login')" class="w-full py-4 bg-[#0D47A1] hover:bg-blue-900 text-white font-extrabold rounded-2xl shadow-xl tracking-wider text-sm transition transform active:scale-95">
+          MASUK APLIKASI
+        </button>
+        <p class="text-[10px] text-blue-100 font-semibold tracking-wide">Moklet Idea Challenge • AMANDAKEYSA Team</p>
+      </div>
+    </div>
+
+    <!-- 2. HALAMAN LOGIN SCREEN -->
+    <div id="screen-login" class="screen p-6 bg-[#E3F2FD]">
+      <button onclick="switchScreen('screen-welcome')" class="text-[#0D47A1] text-xs mb-6 flex items-center gap-2 font-bold hover:text-blue-700 transition">
+        <i class="fas fa-arrow-left"></i> Kembali
+      </button>
+
+      <div class="mb-6">
+        <h2 class="text-2xl font-extrabold text-[#0D47A1]">Login Operator</h2>
+        <p class="text-slate-600 text-xs mt-1">Masuk dengan akun operator perairan atau anggota koperasi</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-[11px] text-[#0D47A1] font-bold block mb-1">Email / ID Operator</label>
+          <input type="email" value="operator@marinescan.id" class="w-full p-3.5 rounded-xl bg-white border border-[#90CAF9] text-slate-800 text-xs focus:outline-none focus:border-[#2196F3] shadow-sm">
+        </div>
+
+        <div>
+          <label class="text-[11px] text-[#0D47A1] font-bold block mb-1">Kata Sandi</label>
+          <input type="password" value="••••••••" class="w-full p-3.5 rounded-xl bg-white border border-[#90CAF9] text-slate-800 text-xs focus:outline-none focus:border-[#2196F3] shadow-sm">
+        </div>
+
+        <button onclick="switchScreen('screen-dashboard')" class="w-full py-3.5 bg-[#2196F3] hover:bg-blue-600 text-white font-bold rounded-xl text-xs tracking-wider transition shadow-md shadow-blue-500/30 mt-2">
+          MASUK DASHBOARD
+        </button>
+
+        <div class="relative my-4 text-center">
+          <hr class="border-[#90CAF9]">
+          <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#E3F2FD] px-3 text-[10px] text-slate-500 font-medium">atau masuk dengan</span>
+        </div>
+
+        <div class="space-y-2">
+          <button onclick="switchScreen('screen-dashboard')" class="w-full py-3 bg-white border border-[#90CAF9] text-slate-700 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold hover:bg-blue-50 shadow-sm">
+            <i class="fab fa-google text-red-500"></i> Continue with Google
+          </button>
+          <button onclick="switchScreen('screen-dashboard')" class="w-full py-3 bg-white border border-[#90CAF9] text-slate-700 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold hover:bg-blue-50 shadow-sm">
+            <i class="fab fa-apple text-slate-900"></i> Continue with Apple
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. HALAMAN DASHBOARD UTAMA -->
+    <div id="screen-dashboard" class="screen p-4 space-y-3.5 bg-[#E3F2FD]">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-xl font-black text-[#0D47A1] tracking-wider">MARINESCAN</h1>
+          <p class="text-[11px] text-slate-600 font-medium flex items-center gap-1 mt-0.5">
+            <i class="fas fa-location-dot text-[#2196F3]"></i>
+            <span id="user-location-text">Mendeteksi Lokasi...</span>
+          </p>
+        </div>
+        <div class="w-9 h-9 rounded-full bg-white border border-[#90CAF9] flex items-center justify-center text-[#0D47A1] shadow-sm">
+          <i class="fas fa-user-shield text-xs"></i>
+        </div>
+      </div>
+
+      <div class="card-light rounded-2xl p-3.5 flex justify-between items-center">
+        <div>
+          <span class="text-[10px] text-[#2196F3] font-bold uppercase tracking-wider">Kondisi Perairan Live</span>
+          <div class="text-sm font-black text-[#0D47A1] mt-0.5">Cerah & Gelombang Tenang</div>
+          <div class="text-[11px] text-slate-700 font-medium mt-1 flex gap-3">
+            <span><i class="fas fa-water text-[#2196F3]"></i> Gel: 0.8m</span>
+            <span><i class="fas fa-thermometer-half text-amber-500"></i> Suhu: 27.5°C</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <i class="fas fa-sun text-amber-500 text-2xl"></i>
+          <span class="block text-[9px] text-emerald-600 font-extrabold mt-1">STATUS: AMAN</span>
+        </div>
+      </div>
+
+      <div class="card-light rounded-2xl p-3.5 border-l-4 border-l-[#0D47A1]">
+        <div class="flex justify-between text-[10px] text-slate-500 font-bold">
+          <span>DASHBOARD UTAMA SEKTOR</span>
+          <span class="text-[#2196F3]">AI ACTIVE</span>
+        </div>
+        <div class="text-sm font-black text-[#0D47A1] mt-1">SEKTOR A1: POTENSI TINGGI (90%)</div>
+        <div class="text-xs font-bold text-[#2196F3] mt-0.5">Estimasi Populasi: 12 - 18 KG</div>
+      </div>
+
+      <div class="card-light rounded-2xl p-3.5">
+        <span class="text-[11px] text-slate-600 font-bold">Trend Data Kedalaman Perairan</span>
+        <div class="h-24 mt-2 flex items-end justify-between gap-2 px-2">
+          <div class="w-1/6 bg-blue-200 rounded-t h-[40%] flex justify-center text-[9px] text-slate-700 font-bold items-end pb-1">22m</div>
+          <div class="w-1/6 bg-blue-300 rounded-t h-[55%] flex justify-center text-[9px] text-slate-700 font-bold items-end pb-1">25m</div>
+          <div class="w-1/6 bg-blue-400 rounded-t h-[50%] flex justify-center text-[9px] text-white font-bold items-end pb-1">24m</div>
+          <div class="w-1/6 bg-[#2196F3] rounded-t h-[75%] flex justify-center text-[9px] text-white font-bold items-end pb-1">28m</div>
+          <div class="w-1/6 bg-[#0D47A1] rounded-t h-[95%] flex justify-center text-[9px] text-white font-bold items-end pb-1">30m</div>
+        </div>
+      </div>
+
+      <button onclick="switchScreen('screen-ar')" class="w-full py-3.5 bg-[#2196F3] text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-600 transition text-xs shadow-md">
+        <i class="fas fa-camera text-sm"></i> Buka Kamera Pemindai AI (AR)
+      </button>
+    </div>
+
+    <!-- 4. HALAMAN AR CAMERA SCANNER -->
+    <div id="screen-ar" class="screen p-4 flex flex-col justify-between relative bg-black">
+      <video id="camera-feed" autoplay playsinline class="absolute inset-0 w-full h-full object-cover"></video>
+      <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/90 pointer-events-none"></div>
+
+      <div class="flex justify-between items-center z-10">
+        <span class="text-xs font-bold text-white tracking-wider bg-black/60 px-3 py-1 rounded-full backdrop-blur-md">AR AI SCANNER</span>
+        <span class="text-[10px] bg-red-500 text-white px-2.5 py-0.5 rounded-full font-bold animate-pulse" id="ai-status-badge">AI LOADING...</span>
+      </div>
+
+      <div class="relative my-auto h-[320px] rounded-3xl border-2 border-dashed border-white/80 flex items-center justify-center z-10 mx-2 shadow-2xl">
+        <div id="scan-line-anim" class="scan-line hidden z-20"></div>
+        <span class="absolute text-[11px] text-white bg-black/75 px-3 py-1 rounded-full top-3 backdrop-blur-md" id="ai-instruction">Memuat Model Machine Learning...</span>
+        
+        <span class="absolute bottom-3 left-3 text-[9px] text-white font-mono bg-black/70 px-2.5 py-1 rounded-md" id="ar-coords-text">
+          GPS: Mendeteksi...
+        </span>
+      </div>
+
+      <!-- Result Report Popup -->
+      <div id="scan-report" class="absolute inset-x-4 bottom-24 card-light rounded-2xl p-4 z-30 hidden shadow-2xl border-[#2196F3]">
+        <div class="flex justify-between items-center mb-2.5 border-b border-blue-200 pb-2">
+          <h3 class="text-xs font-bold text-[#0D47A1] uppercase tracking-wide"><i class="fas fa-microchip text-[#2196F3]"></i> Hasil Analisis AI In-Browser</h3>
+          <button onclick="closeReport()" class="text-slate-500 hover:text-slate-800 text-xs"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-1.5 text-xs text-slate-700 font-medium">
+          <p>🤖 <strong class="text-[#0D47A1]">Objek Terdeteksi:</strong> <span id="ai-prediction-result" class="text-blue-600 font-bold">Menganalisis...</span></p>
+          <p>💧 <strong class="text-[#0D47A1]">Kejernihan Air (AI):</strong> 91% (Optimal)</p>
+          <p>🌡️ <strong class="text-[#0D47A1]">Suhu Perairan:</strong> 27.5°C</p>
+          <p class="text-[11px] text-[#2196F3] mt-2 font-bold">Rekomendasi: Model AI mengonfirmasi titik ini sangat potensial.</p>
+        </div>
+        <button onclick="switchScreen('screen-recommendation')" class="w-full mt-3 py-2.5 bg-[#0D47A1] text-white font-bold text-xs rounded-xl shadow-lg hover:bg-blue-900">
+          Simpan & Kirim Koordinat Spot
+        </button>
+      </div>
+
+      <div class="flex justify-center items-center pb-3 z-20">
+        <button onclick="captureAndAnalyzeAI()" class="w-16 h-16 rounded-full bg-white/30 border-4 border-white flex items-center justify-center hover:scale-105 transition shadow-lg active:scale-90">
+          <div class="w-12 h-12 rounded-full bg-[#2196F3]"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5. HALAMAN RECOMMENDATION SPOT -->
+    <div id="screen-recommendation" class="screen p-4 space-y-3.5 bg-[#E3F2FD]">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-lg font-black text-[#0D47A1]">Spot Rekomendasi </h1>
+          <p class="text-[10px] text-slate-600 font-semibold" id="spot-location-subtitle">Sektor Perairan Aktif</p>
+        </div>
+        <span class="text-[10px] bg-white text-[#0D47A1] font-bold px-2.5 py-1 rounded-lg border border-[#90CAF9] shadow-sm"> GPS Active</span>
+      </div>
+
+      <div class="h-44 rounded-2xl ocean-map-light border border-[#90CAF9] relative overflow-hidden flex items-center justify-center shadow-inner">
+        <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#0D47A1_1px,transparent_1px)] [background-size:14px_14px]"></div>
+        
+        <div class="absolute top-6 left-10 bg-[#0D47A1] text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-md border border-white animate-bounce">95% A1</div>
+        <div class="absolute top-14 right-10 bg-[#2196F3] text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-md">85% B3</div>
+        <div class="absolute bottom-8 left-20 bg-blue-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-md">78% C2</div>
+      </div>
+
+      <div class="space-y-2.5">
+        <div class="card-light rounded-xl p-3 border-l-4 border-l-[#0D47A1] flex justify-between items-center">
+          <div>
+            <h3 class="font-bold text-xs text-[#0D47A1]">Sektor A1 - Pesisir Utama</h3>
+            <p class="text-[11px] text-[#2196F3] font-bold">Potensi Ikan (AI): Sangat Tinggi (95%)</p>
+            <p class="text-[10px] text-slate-600 mt-0.5 font-medium">Gelombang: 0.8m • Suhu: 27.5°C</p>
+          </div>
+          <button onclick="alert('Koordinat Sektor A1 berhasil dikirim ke grup nelayan!')" class="px-3.5 py-1.5 bg-[#0D47A1] text-white font-bold text-[11px] rounded-lg hover:bg-blue-900">
+            Detail
+          </button>
+        </div>
+
+        <div class="card-light rounded-xl p-3 border-l-4 border-l-[#2196F3] flex justify-between items-center">
+          <div>
+            <h3 class="font-bold text-xs text-[#0D47A1]">Sektor B3 - Teluk Pesisir</h3>
+            <p class="text-[11px] text-[#2196F3] font-bold">Potensi Ikan (AI): Tinggi (85%)</p>
+            <p class="text-[10px] text-slate-600 mt-0.5 font-medium">Gelombang: 1.1m • Suhu: 28.0°C</p>
+          </div>
+          <button onclick="alert('Koordinat Sektor B3 berhasil dikirim ke grup nelayan!')" class="px-3.5 py-1.5 bg-[#2196F3] text-white font-bold text-[11px] rounded-lg hover:bg-blue-600">
+            Detail
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div id="bottom-nav" class="h-16 bg-white border-t border-[#90CAF9] flex justify-around items-center px-4 z-50 shadow-md">
+      <button onclick="switchScreen('screen-dashboard')" class="nav-btn text-[#0D47A1] font-bold flex flex-col items-center gap-1">
+        <i class="fas fa-home text-sm"></i>
+        <span class="text-[9px]">Home</span>
+      </button>
+      <button onclick="switchScreen('screen-ar')" class="nav-btn text-slate-400 font-semibold flex flex-col items-center gap-1">
+        <i class="fas fa-camera text-sm"></i>
+        <span class="text-[9px]">Kamera Scan</span>
+      </button>
+      <button onclick="switchScreen('screen-recommendation')" class="nav-btn text-slate-400 font-semibold flex flex-col items-center gap-1">
+        <i class="fas fa-map-marked-alt text-sm"></i>
+        <span class="text-[9px]">Spot</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let aiModel = null;
+
+    async function loadAIModel() {
+      try {
+        document.getElementById('ai-instruction').innerText = "Memuat Model AI ke Browser...";
+        aiModel = await mobilenet.load();
+        document.getElementById('ai-status-badge').innerText = "AI READY";
+        document.getElementById('ai-status-badge').classList.replace('bg-red-500', 'bg-emerald-500');
+        document.getElementById('ai-instruction').innerText = "Arahkan kamera ke permukaan air / objek";
+      } catch (err) {
+        document.getElementById('ai-status-badge').innerText = "AI OFFLINE";
+        document.getElementById('ai-instruction').innerText = "Mode Simulasi Aktif";
+      }
+    }
+    loadAIModel();
+
+    function switchScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+
+      const bottomNav = document.getElementById('bottom-nav');
+      if (screenId === 'screen-welcome' || screenId === 'screen-login') {
+        bottomNav.style.display = 'none';
+        stopCamera();
+      } else {
+        bottomNav.style.display = 'flex';
+        if (screenId === 'screen-ar') {
+          startCamera();
+        } else {
+          stopCamera();
+        }
+      }
+
+      const navBtns = document.querySelectorAll('.nav-btn');
+      navBtns.forEach(btn => {
+        btn.classList.replace('text-[#0D47A1]', 'text-slate-400');
+        btn.classList.replace('font-bold', 'font-semibold');
+      });
+
+      if (screenId === 'screen-dashboard') {
+        navBtns[0].classList.replace('text-slate-400', 'text-[#0D47A1]');
+        navBtns[0].classList.replace('font-semibold', 'font-bold');
+      }
+      if (screenId === 'screen-ar') {
+        navBtns[1].classList.replace('text-slate-400', 'text-[#0D47A1]');
+        navBtns[1].classList.replace('font-semibold', 'font-bold');
+      }
+      if (screenId === 'screen-recommendation') {
+        navBtns[2].classList.replace('text-slate-400', 'text-[#0D47A1]');
+        navBtns[2].classList.replace('font-semibold', 'font-bold');
+      }
+    }
+
+    document.getElementById('bottom-nav').style.display = 'none';
+
+    let videoStream = null;
+    async function startCamera() {
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        document.getElementById('camera-feed').srcObject = videoStream;
+      } catch (err) {
+        console.log("Kamera tidak diizinkan atau tidak tersedia.");
+      }
+    }
+
+    function stopCamera() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+    }
+
+    async function captureAndAnalyzeAI() {
+      const scanLine = document.getElementById('scan-line-anim');
+      const reportBox = document.getElementById('scan-report');
+      const videoElement = document.getElementById('camera-feed');
+      
+      scanLine.classList.remove('hidden');
+
+      let predictionText = "Sektor Perairan Optimal (Ikan Pelagis Terdeteksi)";
+      
+      if (aiModel) {
+        try {
+          const predictions = await aiModel.classify(videoElement);
+          if (predictions && predictions.length > 0) {
+            predictionText = `${predictions[0].className} (${Math.round(predictions[0].probability * 100)}% Match)`;
+          }
+        } catch (e) {
+          console.log("AI classification fallback used.");
+        }
+      }
+
+      setTimeout(() => {
+        scanLine.classList.add('hidden');
+        document.getElementById('ai-prediction-result').innerText = predictionText;
+        reportBox.classList.remove('hidden');
+      }, 1500);
+    }
+
+    function closeReport() {
+      document.getElementById('scan-report').classList.add('hidden');
+    }
+
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude.toFixed(4);
+            const lon = position.coords.longitude.toFixed(4);
+            document.getElementById('user-location-text').innerText = `Lat: ${lat}, Long: ${lon}`;
+            document.getElementById('ar-coords-text').innerText = `GPS: Lat ${lat}, Long ${lon}`;
+            document.getElementById('spot-location-subtitle').innerText = `Lokasi Aktif: ${lat}, ${lon}`;
+          },
+          () => {
+            document.getElementById('user-location-text').innerText = "Malang, Indonesia";
+          }
+        );
+      } else {
+        document.getElementById('user-location-text').innerText = "Malang, Indonesia";
+      }
+    }
+
+    getUserLocation();
+  </script>
+</body>
+</html>
